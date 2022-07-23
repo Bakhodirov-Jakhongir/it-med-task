@@ -20,7 +20,7 @@ class GetPatientsResource extends JsonResource
             'name' => $this->name,
             'phone_number' => $this->phone_number,
             'address' => $this->address,
-            'appointments' => GetAppointmentsResource::collection($this->appointments)
+            'appointments' => $this->appointments
         ];
     }
 }

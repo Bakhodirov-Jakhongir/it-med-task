@@ -19,7 +19,7 @@ class GetInstitutionsResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'address' => $this->address,
-            'appointments' => GetAppointmentsResource::collection($this->appointments)
+            'appointments' => $this->appointments
         ];
     }
 }

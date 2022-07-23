@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources\Appointment;
 
+use App\Http\Resources\Doctor\GetDoctorsResource;
+use App\Http\Resources\Institution\GetInstitutionsResource;
+use App\Http\Resources\Patient\GetPatientsResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class GetAppointmentsResource extends JsonResource
@@ -14,6 +17,13 @@ class GetAppointmentsResource extends JsonResource
      */
     public function toArray($request)
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'description' => $this->description,
+            'doctor' => new GetDoctorsResource($this->doctor),
+            'patient' => new GetPatientsResource($this->patient),
+            'institution' => new GetInstitutionsResource($this->institution),
+        ];
     }
 }

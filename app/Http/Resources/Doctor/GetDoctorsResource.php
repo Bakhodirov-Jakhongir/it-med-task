@@ -14,6 +14,13 @@ class GetDoctorsResource extends JsonResource
      */
     public function toArray($request)
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'type' => $this->type,
+            'experience' => $this->experience,
+            'phone_number' => $this->phone_number,
+            'appointments' => $this->appointments
+        ];
     }
 }
