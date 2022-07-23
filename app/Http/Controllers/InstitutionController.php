@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Institution;
 use App\Http\Requests\Institution\CreateInstitutionRequest;
 use App\Http\Requests\Institution\UpdateInstitutionRequest;
-use App\Models\Institution;
-use Illuminate\Http\Request;
 use App\Http\Resources\Institution\GetInstitutionsResource;
+use App\Repositories\Interfaces\InstitutionRepositoryInterface;
+use Illuminate\Support\Facades\DB;
 
 class InstitutionController extends Controller
 {
+    private InstitutionRepositoryInterface $institutionRepository;
+
+    public function __construct(InstitutionRepositoryInterface $institutionRepository)
+    {
+        $this->institutionRepository = $institutionRepository;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -17,7 +24,7 @@ class InstitutionController extends Controller
      */
     public function index()
     {
-        $institutions = Institution::with('appointments')->get();
+        $institutions = $this->institutionRepository->getAll();
         return GetInstitutionsResource::collection($institutions);
     }
 
@@ -29,10 +36,17 @@ class InstitutionController extends Controller
      */
     public function store(CreateInstitutionRequest $request)
     {
-        $institution = Institution::create([
-            'name' => $request->name,
-            'address' => $request->address
-        ]);
+        DB::beginTransaction();
+        try {
+            $institution = $this->institutionRepository->create($request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
+        }
+        DB::commit();
         return new GetInstitutionsResource($institution);
     }
 
@@ -56,15 +70,16 @@ class InstitutionController extends Controller
      */
     public function update(UpdateInstitutionRequest $request, Institution $institution)
     {
-        if ($request->has('name')) {
-            $institution->name = $request->name;
+        try {
+            $updated_institution = $this->institutionRepository->update($request, $institution);
+        } catch (\Throwable $th) {
+            DB::beginTransaction();
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
         }
-
-        if ($request->has('address')) {
-            $institution->address = $request->address;
-        }
-        $institution->save();
-        return new GetInstitutionsResource($institution);
+        return new GetInstitutionsResource($updated_institution);
     }
 
     /**
@@ -75,7 +90,14 @@ class InstitutionController extends Controller
      */
     public function destroy(Institution $institution)
     {
-        $institution->delete();
+        try {
+            $this->institutionRepository->delete($institution);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
+        }
         return response()->json([], 204);
     }
 }
