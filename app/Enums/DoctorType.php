@@ -11,8 +11,8 @@ use BenSampo\Enum\Enum;
  */
 final class DoctorType extends Enum
 {
-    const Internist = 1; //Терапевт
-    const Psychiatrist = 2; //Психиатр
-    const Neurologist = 3;  //Невролог
-    const GENERAL_DOCTOR = 0; // Врач общей практики
+    const Internist = 'INTERNIST'; //Терапевт
+    const Psychiatrist = 'PSYCHIATRIST'; //Психиатр
+    const Neurologist = 'NEUROLOGIST';  //Невролог
+    const GENERAL_DOCTOR = 'GENERAL_DOCTOR'; // Врач общей практики
 }
