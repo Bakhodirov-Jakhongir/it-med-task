@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
 use App\Http\Requests\Appointment\CreateAppointmentRequest;
 use App\Http\Requests\Appointment\UpdateAppointmentRequest;
 use App\Http\Resources\Appointment\GetAppointmentsResource;
-use App\Models\Appointment;
-use Illuminate\Http\Request;
+use App\Repositories\Interfaces\AppointmentRepositoryInterface;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
+    private AppointmentRepositoryInterface $appointmentRepository;
+
+    public function __construct(AppointmentRepositoryInterface $appointmentRepository)
+    {
+        $this->appointmentRepository = $appointmentRepository;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -17,7 +24,7 @@ class AppointmentController extends Controller
      */
     public function index()
     {
-        $appointments = Appointment::with(['doctor', 'patient', 'institution'])->get();
+        $appointments = $this->appointmentRepository->getAll();
         return GetAppointmentsResource::collection($appointments);
     }
 
@@ -29,13 +36,17 @@ class AppointmentController extends Controller
      */
     public function store(CreateAppointmentRequest $request)
     {
-        $appointment = Appointment::create([
-            'doctor_id' => $request->doctor_id,
-            'patient_id' => $request->patient_id,
-            'institution_id' => $request->institution_id,
-            'title' => $request->title,
-            'description' => $request->description
-        ]);
+        DB::beginTransaction();
+        try {
+            $appointment = $this->appointmentRepository->create($request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
+        }
+        DB::commit();
         return new GetAppointmentsResource($appointment);
     }
 
@@ -59,28 +70,18 @@ class AppointmentController extends Controller
      */
     public function update(UpdateAppointmentRequest $request, Appointment $appointment)
     {
-        if ($request->has('doctor_id')) {
-            $appointment->doctor_id = $request->doctor_id;
+        DB::beginTransaction();
+        try {
+            $updated_appointment = $this->appointmentRepository->update($request, $appointment);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
         }
-
-        if ($request->has('patient_id')) {
-            $appointment->patient_id = $request->patient_id;
-        }
-
-        if ($request->has('institution_id')) {
-            $appointment->institution_id = $request->institution_id;
-        }
-
-        if ($request->has('title')) {
-            $appointment->title = $request->title;
-        }
-
-        if ($request->has('description')) {
-            $appointment->description = $request->description;
-        }
-
-        $appointment->save();
-        return new GetAppointmentsResource($appointment);
+        DB::commit();
+        return new GetAppointmentsResource($updated_appointment);
     }
 
     /**
@@ -91,7 +92,14 @@ class AppointmentController extends Controller
      */
     public function destroy(Appointment $appointment)
     {
-        $appointment->delete();
+        try {
+            $this->appointmentRepository->delete($appointment);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
+        }
         return response()->json([], 204);
     }
 }
