@@ -4,6 +4,8 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\PatientController;
+use App\Models\Doctor;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
