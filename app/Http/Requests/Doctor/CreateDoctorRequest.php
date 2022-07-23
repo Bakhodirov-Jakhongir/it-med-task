@@ -28,7 +28,7 @@ class CreateDoctorRequest extends FormRequest
     {
         return [
             'name' => 'required|string|min:3|max:255',
-            'phone_number' => ['required', new PhoneValidation()],
+            'phone_number' => ['required', 'unique:doctors,phone_number', new PhoneValidation()],
             'type' => ['required', new EnumValue(DoctorType::class)],
             'experience' => 'required|numeric'
         ];

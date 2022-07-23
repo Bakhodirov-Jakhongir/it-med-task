@@ -26,7 +26,7 @@ class CreatePatientRequest extends FormRequest
     {
         return [
             'name' => 'required|string|min:3|max:255',
-            'phone_number' => ['required', new PhoneValidation()],
+            'phone_number' => ['required', 'unique:patients,phone_number', new PhoneValidation()],
             'address' => 'required'
         ];
     }

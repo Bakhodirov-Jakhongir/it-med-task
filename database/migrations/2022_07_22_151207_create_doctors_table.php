@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('name')->index();
             $table->enum('type', DoctorType::getValues())->default(DoctorType::GENERAL_DOCTOR);
             $table->unsignedTinyInteger('experience');
-            $table->string('phone_number');
+            $table->string('phone_number')->unique();
             $table->timestamps();
         });
     }
