@@ -38,7 +38,7 @@ class PatientsTest extends TestCase
     {
         $patient = Patient::create([
             'name' => 'test name',
-            'phone_number' => '+998931234567',
+            'phone_number' => '998931234567',
             'address' => 'test address'
         ]);
         $response = $this->deleteJson(route('patients.destroy', [$patient->id]));
