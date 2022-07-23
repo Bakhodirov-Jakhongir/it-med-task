@@ -72,7 +72,7 @@ class PatientController extends Controller
     {
         DB::beginTransaction();
         try {
-            $patient = $this->patientRepository->update($request, $patient);
+            $updated_patient = $this->patientRepository->update($request, $patient);
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([
@@ -81,7 +81,7 @@ class PatientController extends Controller
             ], 422);
         }
         DB::commit();
-        return new GetPatientsResource($patient);
+        return new GetPatientsResource($updated_patient);
     }
 
     /**

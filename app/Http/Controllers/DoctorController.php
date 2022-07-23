@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\DoctorType;
+use App\Models\Doctor;
 use App\Http\Requests\Doctor\CreateDoctorRequest;
 use App\Http\Requests\Doctor\UpdateDoctorRequest;
 use App\Http\Resources\Doctor\GetDoctorsResource;
-use App\Models\Doctor;
-use Illuminate\Http\Request;
+use App\Repositories\Interfaces\DoctorRepositoryInterface;
+use Illuminate\Support\Facades\DB;
 
 class DoctorController extends Controller
 {
+    private DoctorRepositoryInterface $doctorRepository;
+
+    public function __construct(DoctorRepositoryInterface $doctorRepository)
+    {
+        $this->doctorRepository = $doctorRepository;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -18,7 +24,7 @@ class DoctorController extends Controller
      */
     public function index()
     {
-        $doctors = Doctor::with('appointments')->get();
+        $doctors = $this->doctorRepository->getAll();
         return GetDoctorsResource::collection($doctors);
     }
 
@@ -30,12 +36,17 @@ class DoctorController extends Controller
      */
     public function store(CreateDoctorRequest $request)
     {
-        $doctor = Doctor::create([
-            'name' => $request->name,
-            'phone_number' => $request->phone_number,
-            'type' => $request->type,
-            'experience' => $request->experience
-        ]);
+        DB::beginTransaction();
+        try {
+            $doctor = $this->doctorRepository->create($request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
+        }
+        DB::commit();
         return new GetDoctorsResource($doctor);
     }
 
@@ -59,23 +70,18 @@ class DoctorController extends Controller
      */
     public function update(UpdateDoctorRequest $request, Doctor $doctor)
     {
-        if ($request->has('name')) {
-            $doctor->name = $request->name;
+        DB::beginTransaction();
+        try {
+            $updated_doctor = $this->doctorRepository->update($request, $doctor);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
         }
-
-        if ($request->has('phone_number')) {
-            $doctor->phone_number = $request->phone_number;
-        }
-
-        if ($request->has('type')) {
-            $doctor->type = $request->type;
-        }
-
-        if ($request->has('experience')) {
-            $doctor->experience = $request->experience;
-        }
-        $doctor->save();
-        return new GetDoctorsResource($doctor);
+        DB::commit();
+        return new GetDoctorsResource($updated_doctor);
     }
 
     /**
@@ -86,7 +92,14 @@ class DoctorController extends Controller
      */
     public function destroy(Doctor $doctor)
     {
-        $doctor->delete();
+        try {
+            $this->doctorRepository->delete($doctor);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
+        }
         return response()->json([], 204);
     }
 }
