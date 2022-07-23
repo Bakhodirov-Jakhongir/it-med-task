@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\PatientController;
@@ -23,5 +24,6 @@ use Illuminate\Support\Facades\Route;
 Route::apiResources([
     'patients' => PatientController::class,
     'doctors' => DoctorController::class,
-    'institutions' => InstitutionController::class
+    'institutions' => InstitutionController::class,
+    'appointments' => AppointmentController::class
 ]);
