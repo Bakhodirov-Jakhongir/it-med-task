@@ -28,7 +28,7 @@ class UpdateDoctorRequest extends FormRequest
     {
         return [
             'name' => 'string|min:3|max:255',
-            'phone_number' => ['unique:doctors,phone_number' . $this->doctor->id, new PhoneValidation()],
+            'phone_number' => ['unique:doctors,phone_number,' . $this->doctor->id, new PhoneValidation()],
             'type' => new EnumValue(DoctorType::class),
             'experience' => 'numeric'
         ];

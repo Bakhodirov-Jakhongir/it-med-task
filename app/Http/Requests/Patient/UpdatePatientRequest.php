@@ -26,7 +26,7 @@ class UpdatePatientRequest extends FormRequest
     {
         return [
             'name' => 'string|min:3|max:255',
-            'phone_number' => ['unique:patients,phone_number' . $this->patient->id, new PhoneValidation()],
+            'phone_number' => ['unique:patients,phone_number,' . $this->patient->id, new PhoneValidation()],
             'address' => 'string'
         ];
     }
