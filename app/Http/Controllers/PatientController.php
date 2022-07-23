@@ -6,9 +6,17 @@ use App\Models\Patient;
 use App\Http\Requests\Patient\CreatePatientRequest;
 use App\Http\Requests\Patient\UpdatePatientRequest;
 use App\Http\Resources\Patient\GetPatientsResource;
+use App\Repositories\Interfaces\PatientRepositoryInterface;
+use Illuminate\Support\Facades\DB;
 
 class PatientController extends Controller
 {
+    private PatientRepositoryInterface $patientRepository;
+
+    public function __construct(PatientRepositoryInterface $patientRepository)
+    {
+        $this->patientRepository = $patientRepository;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -16,7 +24,7 @@ class PatientController extends Controller
      */
     public function index()
     {
-        $patients = Patient::with('appointments')->get();
+        $patients = $this->patientRepository->getAll();
         return GetPatientsResource::collection($patients);
     }
 
@@ -28,11 +36,17 @@ class PatientController extends Controller
      */
     public function store(CreatePatientRequest $request)
     {
-        $patient = Patient::create([
-            'name' => $request->name,
-            'phone_number' => $request->phone_number,
-            'address' => $request->address
-        ]);
+        DB::beginTransaction();
+        try {
+            $patient = $this->patientRepository->create($request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
+        }
+        DB::commit();
         return (new GetPatientsResource($patient))->response()->setStatusCode(201);
     }
 
@@ -56,18 +70,17 @@ class PatientController extends Controller
      */
     public function update(UpdatePatientRequest $request, Patient $patient)
     {
-        if ($request->has('name')) {
-            $patient->name = $request->name;
+        DB::beginTransaction();
+        try {
+            $patient = $this->patientRepository->update($request, $patient);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
         }
-
-        if ($request->has('address')) {
-            $patient->address = $request->address;
-        }
-
-        if ($request->has('phone_number')) {
-            $patient->phone_number = $request->phone_number;
-        }
-        $patient->save();
+        DB::commit();
         return new GetPatientsResource($patient);
     }
 
@@ -79,7 +92,14 @@ class PatientController extends Controller
      */
     public function destroy(Patient $patient)
     {
-        $patient->delete();
+        try {
+            $this->patientRepository->delete($patient);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 422);
+        }
         return response()->json([], 204);
     }
 }
